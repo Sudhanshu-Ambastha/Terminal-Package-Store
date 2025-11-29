@@ -2,18 +2,20 @@
 
 A **Terminal User Interface (TUI)** frontend for the **Windows Package Manager (winget)**.
 
-Terminal Package Store provides a clean, fast, App-Store-like experience directly in your command line, allowing you to browse, upgrade, install, and uninstall applications — powered by the robust winget backend.
+Terminal Package Store provides a clean, fast, App-Store-like experience directly in your terminal, allowing you to browse, update, install, and uninstall applications — all powered by the official winget backend.
 
-![Terminal Package Store Screenshot](./main/example/finish.png)
+![img](./main/example/image.png)
 
 ---
 
 ## 🚀 Features
 
-- **App Store-like Experience** — Browse installed apps and available upgrades in a modern, divided panel layout.  
-- **Real-time Interaction** — Built with the **Textual** framework for smooth, responsive UI.  
-- **Direct Winget Integration** — Uses the system’s winget installation for reliable package management.  
-- **Zero-Downtime Installs** — External install windows prevent the TUI from freezing during operations.
+- **App Store-like Layout** — A modern split-panel interface for browsing installed apps and updates.  
+- **Smooth TUI Experience** — Powered by the **Textual** framework for responsive, interactive UI.  
+- **Native Winget Integration** — Uses your existing system winget installation.  
+- **Non-blocking Installs** — External install windows ensure the UI never freezes.  
+- **Auto Version Checker** — Checks GitHub releases and notifies when updates are available.  
+- **Clean, Lightweight, and Fast** — Works without admin rights (unless winget requires it).  
 
 ---
 
@@ -21,16 +23,17 @@ Terminal Package Store provides a clean, fast, App-Store-like experience directl
 
 ### Prerequisites
 
-Make sure you have the following installed:
+Ensure you have:
 
 - **Python 3.10+**  
 - **Windows Package Manager (winget)**  
+- **Windows 10/11**
 
 ---
 
-## Option 1: Run from Source (Development)
+### 🧪 Option 1: Run from Source (Development)
 
-- Clone the repository
+- Clone the repository:
   ```powershell
   git clone https://github.com/Sudhanshu-Ambastha/Terminal-Package-Store.git
   ```
@@ -39,7 +42,7 @@ Make sure you have the following installed:
   ```
 - install dependency
   ```powershell
-  pip install textual
+  pip install textual httpx
   ```
 - Run app
   ```powershell
@@ -67,6 +70,9 @@ Ensure the following files exist in the **project root directory**:
 
 - `main.py`
 - `app_data_parser.py`
+- `update_checker.py`
+- `config_loader.py`
+- `config.json`
 - `package_store.css`
 - `version_info.rc`
 - `icon.ico`
@@ -78,16 +84,12 @@ Ensure the following files exist in the **project root directory**:
 Run the following command to generate a **single-file executable**:
 
 ```powershell
-pyinstaller main.py `
-    --onefile `
-    --name "PackageStoreManager" `
-    --hidden-import "app_data_parser" `
-    --add-data "package_store.css;." `
-    --version-file "version_info.rc" `
-    --icon "icon.ico"
+pyinstaller main.py --onefile --name PackageStoreManager --hidden-import app_data_parser --hidden-import update_checker --hidden-import config_loader --hidden-import httpx --add-data "package_store.css:." --add-data "config.json:." --add-data "./app_data_parser.py:." --add-data "./update_checker.py:." --add-data "./config_loader.py:." --version-file version_info.rc --icon icon.ico
 ```
-Once completed, the final executable will be located inside the **dist/** folder.
-
+After building, the executable will appear in:
+```
+dist/PackageStoreManager.exe
+```
 ---
 
 ## 🔏 Code Signing (Optional but Recommended)
@@ -119,3 +121,7 @@ You can:
 - Open an **issue**
 - Submit a **pull request**
 - Suggest **new features** or improvements
+
+## 📜 License
+
+[Apache License Version 2.0 © 2025 Sudhanshu Ambastha](./LICENSE)

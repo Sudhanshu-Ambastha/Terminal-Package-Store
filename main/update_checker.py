@@ -1,16 +1,6 @@
 import httpx
 
 async def check_for_updates(current_version: str, api_url: str) -> dict:
-    """
-    Checks the GitHub API for the latest release version of the application.
-
-    Args:
-        current_version: The version string of the currently running application (e.g., "1.0.0").
-        api_url: The GitHub API URL for the latest release (e.g., ".../releases/latest").
-
-    Returns:
-        A dictionary with the check result, including status and message.
-    """
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(api_url)
