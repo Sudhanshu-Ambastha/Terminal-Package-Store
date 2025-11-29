@@ -17,7 +17,6 @@ def get_upgradable_packages() -> List[Package]:
     This is sensitive to changes in winget's output formatting.
     """
     try:
-        # 1. Execute the winget command
         result = subprocess.run(
             ['winget', 'upgrade'], 
             capture_output=True, 

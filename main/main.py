@@ -102,30 +102,26 @@ class TerminalPackageStore(App[None]):
             
     
     def action_update_package(self, pkg_id: str) -> None:
-        
-        self.query_one("#detail-info", Static).update(
-            f"[yellow]Attempting upgrade for:[/yellow] [b]{pkg_id}[/b]...\n\n"
-            "Please follow any prompts that appear in the terminal."
+        self.query_one("#status-messages", Static).update(
+            f"[yellow]Upgrading:[/yellow] [b]{pkg_id}[/b]..."
         )
-        
+
         try:
             subprocess.run(
-                ['winget', 'upgrade', '--id', pkg_id, '--interactive', '--accept-package-agreements'], 
+                ['winget', 'upgrade', '--id', pkg_id, '--interactive', '--accept-package-agreements'],
                 check=True
             )
-            
-            self.query_one("#detail-info", Static).update(
-                f"[green]SUCCESS:[/green] [b]{pkg_id}[/b] upgraded!\n\n"
-                "Refreshing package list..."
+            self.query_one("#status-messages", Static).update(
+                f"[green]SUCCESS:[/green] [b]{pkg_id}[/b] upgraded."
             )
-            self.call_after_refresh(self.load_data)
-            
-        except subprocess.CalledProcessError as e:
-            self.query_one("#detail-info", Static).update(
-                f"[red]FAILURE during UPGRADE:[/red] Command failed.\n{e.stderr.strip() if e.stderr else 'Check terminal for details.'}"
+            self.load_data()
+
+        except subprocess.CalledProcessError:
+            self.query_one("#status-messages", Static).update(
+                f"[red]FAILURE:[/red] [b]{pkg_id}[/b] failed to upgrade."
             )
         except FileNotFoundError:
-            self.query_one("#detail-info", Static).update("[red]FATAL ERROR:[/red] 'winget' command not found.")
+            self.query_one("#status-messages", Static).update("[red]FATAL ERROR:[/red] 'winget' not found.")
             
     def action_update_all(self) -> None:
         if not self.packages:
