@@ -43,6 +43,28 @@ Horizontal {
     margin-bottom: 1;
 }
 
+#version-check-container {
+    width: 100%;
+    height: auto;
+    margin-bottom: 1;
+    align-horizontal: left;
+}
+
+#app-update-stats {
+    width: 1fr;
+    padding: 1;
+    background: $surface;
+    border: solid $primary;
+    text-align: center;
+}
+
+#version-check-container #btn-check-version {
+    width: auto;
+    height: auto;
+    padding: 1 2;
+    margin-left: 1;
+}
+
 #action-buttons {
     layout: horizontal;
     align-horizontal: center;

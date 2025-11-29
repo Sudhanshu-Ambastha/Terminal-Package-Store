@@ -1,0 +1,12 @@
+{
+  "app": {
+    "name": "Terminal Package Store",
+    "version": "1.0.0",
+    "author": "Sudhanshu Ambastha",
+    "github_repo": "Sudhanshu-Ambastha/Terminal-Package-Store"
+  },
+  "settings": {
+    "check_updates_on_startup": true,
+    "auto_refresh_interval": 604800
+  }
+}

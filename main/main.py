@@ -1,22 +1,35 @@
 import subprocess
+import time
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, DataTable, Static, Button
 from textual.containers import Vertical, Horizontal
 from textual.binding import Binding
 from app_data_parser import get_upgradable_packages, Package 
 from typing import List, Optional
+from update_checker import check_for_updates
+from config_loader import load_config, get_api_url
 
 class TerminalPackageStore(App[None]):
-    TITLE = "Terminal Package Store"
     
     CSS_PATH = "package_store.css"
     
     packages: List[Package] = []
     selected_package: Optional[Package] = None
+    last_update_check: float = 0.0
     
     BINDINGS = [
         Binding("q", "quit", "Quit", show=True),
     ]
+
+    def __init__(self):
+        super().__init__()
+        # Load configuration from config.json
+        self.config = load_config()
+        self.TITLE = self.config["app"]["name"]
+        self.CURRENT_VERSION = self.config["app"]["version"]
+        self.API_URL = get_api_url(self.config)
+        self.CHECK_ON_STARTUP = self.config["settings"]["check_updates_on_startup"]
+        self.AUTO_REFRESH_INTERVAL = self.config["settings"]["auto_refresh_interval"]
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -39,12 +52,22 @@ class TerminalPackageStore(App[None]):
                     "Select a package from the left to view details and perform actions.", 
                     id="detail-info"
                 )
+                # Add version stats widget and check button in the detail pane
+                with Horizontal(id="version-check-container"):
+                    yield Static("Checking for app updates...", id="app-update-stats")
+                    yield Button("Check Now", variant="default", id="btn-check-version")
+                
                 with Horizontal(id="action-buttons"):
                     yield Button("Update Selected", variant="primary", id="btn-update")
                     yield Button("Uninstall", variant="error", id="btn-uninstall")
 
     def on_mount(self) -> None:
         self.load_data()
+        # Check for app updates on startup if enabled
+        if self.CHECK_ON_STARTUP:
+            self.call_after_refresh(self.check_app_updates)
+        # Set up auto-refresh timer (checks every week if app stays open)
+        self.set_interval(self.AUTO_REFRESH_INTERVAL, self.auto_check_updates)
 
     def load_data(self) -> None:
         self.packages = get_upgradable_packages()
@@ -80,6 +103,34 @@ class TerminalPackageStore(App[None]):
             self.query_one(".section-title", Static).update("[bold blue]No Available Upgrades Found[/bold blue]")
             self.query_one("#detail-info", Static).update("[bold green]Everything is up to date![/bold green]")
 
+    async def check_app_updates(self) -> None:
+        """Check for app updates and update the UI accordingly."""
+        stats_widget = self.query_one("#app-update-stats", Static)
+        
+        # Show checking status
+        stats_widget.update("[dim]Checking for app updates...[/dim]")
+        
+        update_result = await check_for_updates(self.CURRENT_VERSION, self.API_URL)
+        
+        if update_result["status"] == "update_available":
+            latest_version = update_result["latest_version"]
+            stats_widget.update(f"[yellow]App Update Available:[/yellow] v{latest_version} (current: v{self.CURRENT_VERSION})")
+        elif update_result["status"] == "latest":
+            stats_widget.update(f"[green]App is up to date:[/green] v{self.CURRENT_VERSION}")
+        else:  # Error case
+            message = update_result.get("message", "Unknown error")
+            stats_widget.update(f"[dim]App Update Check Failed: {message}[/dim]")
+        
+        # Update last check timestamp
+        self.last_update_check = time.time()
+
+    async def auto_check_updates(self) -> None:
+        """Automatically check for app updates based on interval."""
+        current_time = time.time()
+        
+        # Check if enough time has passed since last check
+        if current_time - self.last_update_check >= self.AUTO_REFRESH_INTERVAL:
+            await self.check_app_updates()
 
     def _update_detail_pane(self) -> None:
         if self.selected_package:
@@ -203,24 +254,33 @@ class TerminalPackageStore(App[None]):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
 
+        # Global actions that don't need a selected package
         if button_id == "btn-update-all":
             self.action_update_all()
             return
         elif button_id == "btn-refresh":
             self.query_one("#detail-info", Static).update("[bold blue]Checking for available upgrades...[/bold blue]")
             self.load_data()
+            # Also re-check for app updates when refreshing
+            self.call_after_refresh(self.check_app_updates)
+            return
+        elif button_id == "btn-check-version":
+            # Manual app version check button - no package selection needed
+            self.call_after_refresh(self.check_app_updates)
             return
 
-        if self.selected_package is None:
-            self.query_one("#detail-info", Static).update("[red]Error: Please select a package first.[/red]")
-            return
-            
-        pkg_id = self.selected_package.id
+        # Package-specific actions - require a selected package
+        if button_id in ["btn-update", "btn-uninstall"]:
+            if self.selected_package is None:
+                self.query_one("#detail-info", Static).update("[red]Error: Please select a package first.[/red]")
+                return
+                
+            pkg_id = self.selected_package.id
 
-        if button_id == "btn-update":
-            self.action_update_package(pkg_id)
-        elif button_id == "btn-uninstall":
-            self.action_uninstall_package(pkg_id)
+            if button_id == "btn-update":
+                self.action_update_package(pkg_id)
+            elif button_id == "btn-uninstall":
+                self.action_uninstall_package(pkg_id)
 
 def run_app():
     app = TerminalPackageStore()

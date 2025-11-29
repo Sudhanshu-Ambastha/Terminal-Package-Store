@@ -59,7 +59,7 @@ If you want to build the `.exe` yourself, follow the steps below.
 ### 1. Install PyInstaller
 
 ```powershell
-pip install pyinstaller
+pip install pyinstaller httpx
 ```
 ### 2. Required Files
 
